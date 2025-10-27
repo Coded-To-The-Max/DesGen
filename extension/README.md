@@ -1,6 +1,6 @@
 # DesGen Chrome Extension
 
-Convert images to Desmos graph outlines using advanced edge detection.
+Convert images to Desmos graph outlines using advanced edge detection, not a perfect trace due to detection limitations, but a discernible outline.
 
 ## Installation
 
@@ -28,10 +28,12 @@ Convert images to Desmos graph outlines using advanced edge detection.
 
 1. Click the DesGen extension icon in your Chrome toolbar
 2. Upload an image (PNG, JPG up to 5MB)
-3. Adjust edge detection thresholds and max curves as needed
-4. Click "Process & Inject to Desmos"
-5. Open https://www.desmos.com/calculator in a new tab
-6. The extension will automatically inject your graph equations
+3. *WORKS BEST WITH OBJECTS WITH BLANK BACKGROUND AS EDGE DETECTION CANNOT DIFFERENTIATE BACKGROUND*
+4. Adjust edge detection thresholds and max curves as needed
+5. Click "Process & Inject to Desmos"
+6. Open https://www.desmos.com/calculator in a new tab
+7. The extension will output a list of equations to copy-paste into Desmos.
+8. For best best-looking result, due to Desmos limitations, you must manually click the gear icon and click the colors, and change them to either the same color and uncheck the "Fill" option.
 
 ## Features
 
@@ -42,32 +44,10 @@ Convert images to Desmos graph outlines using advanced edge detection.
 - AI-enhanced detection (experimental)
 - Automatic viewport fitting
 
-## Technical Details
-
-- Uses OpenCV.js for Canny edge detection
-- Douglas-Peucker algorithm for curve simplification
-- Parametric list-based equations for Desmos
-- Client-side processing (no server required)
-
-## Troubleshooting
-
-- **"Calculator not ready"**: Make sure you're on https://www.desmos.com/calculator
-- **No equations appear**: Try adjusting the threshold values
-- **Too many curves**: Reduce the "Max Curves" slider
-- **Extension not working**: Reload the extension in chrome://extensions/
-
 ## GitHub Repository
 
 https://github.com/Coded-To-The-Max/DesGen
 
 ## License
 
-MIT License - Feel free to modify and distribute
-
-## Credits
-
-Built with:
-- OpenCV.js for computer vision
-- Desmos API for graphing
-- Chrome Extensions API
-- Glassmorphism design principles
+GNU License
