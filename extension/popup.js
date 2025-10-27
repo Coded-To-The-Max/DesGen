@@ -118,7 +118,12 @@ function processImage() {
     ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
 
     // Get image data
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // Apply enhanced preprocessing if enabled
+    if (aiEnhancedCheckbox.checked) {
+      imageData = enhanceImage(imageData);
+    }
     
     // Apply edge detection
     const edges = detectEdges(imageData, parseInt(threshold1Input.value), parseInt(threshold2Input.value));
@@ -149,6 +154,124 @@ function processImage() {
     showStatus('Error processing image: ' + error.message, 'error');
     injectBtn.disabled = true;
   }
+}
+
+// Enhanced image preprocessing
+function enhanceImage(imageData) {
+  const width = imageData.width;
+  const height = imageData.height;
+  const data = imageData.data;
+  
+  // Step 1: Convert to grayscale with contrast enhancement
+  const gray = new Uint8ClampedArray(width * height);
+  let min = 255, max = 0;
+  
+  for (let i = 0; i < data.length; i += 4) {
+    const idx = i / 4;
+    const val = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+    gray[idx] = val;
+    if (val < min) min = val;
+    if (val > max) max = val;
+  }
+  
+  // Step 2: Histogram equalization for contrast enhancement
+  const range = max - min;
+  if (range > 0) {
+    for (let i = 0; i < gray.length; i++) {
+      gray[i] = ((gray[i] - min) / range) * 255;
+    }
+  }
+  
+  // Step 3: Apply stronger Gaussian blur (5x5 kernel)
+  const blurred = strongGaussianBlur(gray, width, height);
+  
+  // Step 4: Morphological closing to connect nearby edges
+  const closed = morphologicalClose(blurred, width, height);
+  
+  // Convert back to ImageData
+  const enhanced = new ImageData(width, height);
+  for (let i = 0; i < closed.length; i++) {
+    enhanced.data[i * 4] = closed[i];
+    enhanced.data[i * 4 + 1] = closed[i];
+    enhanced.data[i * 4 + 2] = closed[i];
+    enhanced.data[i * 4 + 3] = 255;
+  }
+  
+  return enhanced;
+}
+
+// Stronger 5x5 Gaussian blur
+function strongGaussianBlur(data, width, height) {
+  const kernel = [
+    1, 4, 7, 4, 1,
+    4, 16, 26, 16, 4,
+    7, 26, 41, 26, 7,
+    4, 16, 26, 16, 4,
+    1, 4, 7, 4, 1
+  ];
+  const kernelSum = 273;
+  const result = new Uint8ClampedArray(data.length);
+  
+  for (let y = 2; y < height - 2; y++) {
+    for (let x = 2; x < width - 2; x++) {
+      let sum = 0;
+      for (let ky = -2; ky <= 2; ky++) {
+        for (let kx = -2; kx <= 2; kx++) {
+          const idx = (y + ky) * width + (x + kx);
+          const kidx = (ky + 2) * 5 + (kx + 2);
+          sum += data[idx] * kernel[kidx];
+        }
+      }
+      result[y * width + x] = sum / kernelSum;
+    }
+  }
+  
+  return result;
+}
+
+// Morphological closing (dilation followed by erosion)
+function morphologicalClose(data, width, height) {
+  const dilated = dilate(data, width, height);
+  const closed = erode(dilated, width, height);
+  return closed;
+}
+
+function dilate(data, width, height) {
+  const result = new Uint8ClampedArray(data.length);
+  
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      let maxVal = 0;
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          const idx = (y + ky) * width + (x + kx);
+          if (data[idx] > maxVal) maxVal = data[idx];
+        }
+      }
+      result[y * width + x] = maxVal;
+    }
+  }
+  
+  return result;
+}
+
+function erode(data, width, height) {
+  const result = new Uint8ClampedArray(data.length);
+  
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      let minVal = 255;
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          const idx = (y + ky) * width + (x + kx);
+          if (data[idx] < minVal) minVal = data[idx];
+        }
+      }
+      result[y * width + x] = minVal;
+    }
+  }
+  
+  return result;
 }
 
 // Sobel edge detection
